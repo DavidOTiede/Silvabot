@@ -65,6 +65,7 @@ class DataHandling(QtCore.QThread):
         self.firstbuffer = True
         self.temp_filename = r"C:\TEMP\temp.h5"
         self.filename = 'test'
+        self.measurement_name = None
 
         # initialize Calibration dict
         self.calibration = {}
@@ -223,11 +224,26 @@ class DataHandling(QtCore.QThread):
         time.sleep(0.5) # allow for BufferWorker to create temp file
         with h5py.File(self.temp_filename, 'a') as hf:
             hf.attrs["comments"] = comments
+
+            # Save measurement parameters
+            if self.measurement_name is not None:
+                hf.attrs["measurement_name"] = self.measurement_name    # Sets the measurement name in the save file
+                string_dtype = h5py.string_dtype(encoding='utf-8')      # Define the dtype that will be used to save the data 
+                measurement_parameters = hf.create_dataset("measurement settings",
+                    data=np.asarray(self.measurement_inputs, dtype=string_dtype), dtype=string_dtype)
+                measurement_parameters.attrs["parameter_keys"] = self.measurement_input_names
+
         ty_res = time.localtime(time.time())
         timestamp = time.strftime("%H_%M_%S", ty_res)
         savename = filename + '_' + timestamp + '.h5'
         shutil.copyfile(self.temp_filename, savename)
         print('Data saved as: ' + savename )
+
+    # Function to store experiment parameters before saving
+    def set_measurement_metadata(self, name, input_names, inputs):
+        self.measurement_name = name
+        self.measurement_input_names = input_names
+        self.measurement_inputs = inputs
 
     #@QtCore.pyqtSlot
     def add_calibration(self,calibration):
