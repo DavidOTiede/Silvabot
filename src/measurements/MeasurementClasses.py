@@ -751,14 +751,14 @@ class THzAcquisition(QtCore.QThread):
         if continuous_checkbox: # checked means continuous
             self.burst_duration = (self.final_pos - self.initial_pos) / self.scan_speed
             self.scan_type = 'Continuous'
+            self.spec_length = (self.burst_duration * 429.2).astype(int)
         else:
             self.scan_type = 'Step'
             self.burst_duration = 0.1
+            self.spec_length = np.ceil((self.final_pos - self.initial_pos) / self.scan_resolution).astype(int)
 
+        # Connect the plot_data function to the plotData signal
         self.plotDataSignal.connect(self.plot_data)
-
-        # calculate spec length
-        self.spec_length = np.ceil((self.final_pos - self.initial_pos) / self.scan_resolution).astype(int)
 
 
     # Function to acquire data from the lock-in while the delay stage is moving
@@ -869,6 +869,6 @@ class THzAcquisition(QtCore.QThread):
         # Send the data to DataHandling for saving
         time_attribute = np.array([0, time_array[-1], len(pos)]) # Create time attribute to be saved in the H5 file. This will prevent overflowing the H5 attribute while allowing to reconstruct the time array from the attribute when loading the data in mdsam
         self.sendSpectrum.emit(time_attribute, voltages * 1e6)   # Send the data to DataHandling for saving
-    
+
     def stop(self):
         self.terminate = True
