@@ -274,8 +274,9 @@ class AvantesController:
         """
         avaspec.AVS_Measure(self._device_handle, 0, 1)
         # NB: return: SUCCESS = 0 or FAILURE <> 0; not currently used
-        time.sleep(0.005)
-        time.sleep(self._measurement_config.m_IntegrationTime/1000)
+        buffer = 0.02 # needed to avoid communcation failures. Adapt if needed.
+        wait_time = self._measurement_config.m_IntegrationTime/1000 + buffer
+        time.sleep(wait_time)
         # at least wait for the integration time !
         # we wait the measurement ends
         while avaspec.AVS_PollScan(self._device_handle):
@@ -324,3 +325,6 @@ class AvantesController:
         full_data = np.array(result[1])
         self._scan_count += 1
         self.pymodaq_callback(np.array_split(full_data, 2)[0])
+
+    def heartbeat(self):
+        result = avaspec.AVS_Heartbeat(self._device_handle)
